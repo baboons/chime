@@ -1,0 +1,4 @@
+module CChimeCore {
+    header "chime_core.h"
+    export *
+}

@@ -1,0 +1,131 @@
+# Builds, signs and publishes Chime when a v* tag is pushed.
+# `scripts/release.sh 0.2.0` bumps the version, tags and pushes.
+#
+# Signing uses a dedicated self-signed "Chime Release" certificate kept in the
+# CHIME_SIGNING_P12 / CHIME_SIGNING_PASSWORD secrets. It must stay the same
+# across releases: macOS ties the Accessibility grant to it, so a build signed
+# with anything else makes every user grant access again. It isn't a Developer
+# ID, so builds aren't notarized. The Homebrew cask clears the download quarantine.
+#
+# If this repository has a HOMEBREW_TAP_TOKEN secret (a token that can
+# dispatch workflows on baboons/homebrew-tap), the cask is bumped right away.
+# Otherwise the tap's daily check picks the release up.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish (Apple Silicon)
+    runs-on: macos-26
+    env:
+      ZIP: build/Chime-aarch64-apple-darwin.zip
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: core
+
+      - name: Check the tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          version="$(make -s version)"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME doesn't match Info.plist version $version"
+            exit 1
+          fi
+
+      - name: Tests
+        run: make test
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12: ${{ secrets.CHIME_SIGNING_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CHIME_SIGNING_PASSWORD }}
+        run: |
+          if [ -z "$CERTIFICATE_P12" ]; then
+            echo "::error::CHIME_SIGNING_P12 isn't set. An unsigned build would lose Accessibility access for installed users."
+            exit 1
+          fi
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          echo "KEYCHAIN=$KEYCHAIN" >> "$GITHUB_ENV"
+          password="$(uuidgen)"
+          echo "$CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          security create-keychain -p "$password" "$KEYCHAIN"
+          security set-keychain-settings -lut 3600 "$KEYCHAIN"
+          security unlock-keychain -p "$password" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/signing.p12" -k "$KEYCHAIN" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$password" "$KEYCHAIN" > /dev/null
+          existing=()
+          while IFS= read -r keychain; do existing+=("$(echo "$keychain" | xargs)"); done < <(security list-keychains -d user)
+          security list-keychains -d user -s "$KEYCHAIN" "${existing[@]}"
+          rm "$RUNNER_TEMP/signing.p12"
+
+      - name: Build, sign and zip
+        run: make zip BUILD_NUMBER=${{ github.run_number }} SIGN_IDENTITY="Chime Release"
+
+      - name: Verify the signature
+        run: |
+          codesign --verify --strict --verbose=2 build/Chime.app
+          # The requirement must pin our certificate (a self-signed one shows up as
+          # "certificate root = H..."), not an ad-hoc cdhash.
+          requirement="$(codesign -d -r- build/Chime.app 2>&1 | grep designated)"
+          echo "$requirement"
+          echo "$requirement" | grep -Eq 'certificate (leaf|root) = H"'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Chime-aarch64-apple-darwin
+          path: ${{ env.ZIP }}
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > "$RUNNER_TEMP/notes.md" <<'NOTES'
+          ## Install
+
+          ```sh
+          brew install --cask baboons/tap/chime
+          ```
+
+          Or download `Chime-aarch64-apple-darwin.zip`, unzip it, and move Chime.app to /Applications.
+          Chime isn't notarized. For a manual download, clear the quarantine once with
+          `xattr -dr com.apple.quarantine /Applications/Chime.app` (Homebrew does this for you).
+
+          To update, run `brew upgrade --cask chime`.
+          NOTES
+          gh release create "$GITHUB_REF_NAME" "$ZIP" \
+            --title "Chime ${GITHUB_REF_NAME#v}" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --generate-notes
+
+      - name: Bump the Homebrew cask
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          if [ -z "$TAP_TOKEN" ]; then
+            echo "No HOMEBREW_TAP_TOKEN; the tap's daily check will pick this release up."
+            exit 0
+          fi
+          GH_TOKEN="$TAP_TOKEN" gh api repos/baboons/homebrew-tap/dispatches -f event_type=chime-release
+
+      - name: Remove the signing keychain
+        if: always()
+        run: '[ -z "$KEYCHAIN" ] || security delete-keychain "$KEYCHAIN" 2>/dev/null || true'
