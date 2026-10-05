@@ -55,6 +55,11 @@ final class AppModel {
         state.apps.first { $0.bundleId == app.bundleId }
     }
 
+    /// Whether any tracked app has a badge.
+    var hasNotifications: Bool {
+        config.apps.contains { status(of: $0)?.badge != nil }
+    }
+
     func isTracked(_ bundleId: String) -> Bool {
         config.apps.contains { $0.bundleId == bundleId }
     }

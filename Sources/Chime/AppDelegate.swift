@@ -19,6 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// Nothing would hide the menu bar again once Chime is gone.
+    func applicationWillTerminate(_ notification: Notification) {
+        SystemMenuBar.setRevealed(false)
+    }
+
     /// Opening Chime while it runs is the way back to settings when the bell is hidden.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
         settings.show()

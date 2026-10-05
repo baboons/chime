@@ -47,6 +47,8 @@ pub struct Settings {
     pub badge_style: BadgeStyle,
     pub monochrome: bool,
     pub show_menu_icon: bool,
+    /// Bring a menu bar that hides automatically into view while there are notifications.
+    pub reveal_menu_bar: bool,
     pub poll_interval_ms: u64,
 }
 
@@ -56,6 +58,7 @@ impl Default for Settings {
             badge_style: BadgeStyle::Pill,
             monochrome: false,
             show_menu_icon: true,
+            reveal_menu_bar: false,
             poll_interval_ms: 1_000,
         }
     }
@@ -152,6 +155,7 @@ mod tests {
         assert!(!config.apps[0].always_show);
         assert_eq!(config.settings.badge_style, BadgeStyle::Dot);
         assert!(config.settings.show_menu_icon);
+        assert!(!config.settings.reveal_menu_bar);
         assert_eq!(config.settings.poll_interval_ms, 1_000);
     }
 

@@ -52,6 +52,10 @@ struct SettingsView: View {
                     Text("Show Chime in the menu bar")
                     Text("When hidden, open Chime again to get back here.")
                 }
+                Toggle(isOn: $model.config.settings.revealMenuBar) {
+                    Text("Reveal the menu bar when notified")
+                    Text("For when the menu bar is set to hide automatically.")
+                }
                 Picker("Check for notifications", selection: $model.config.settings.pollIntervalMs) {
                     Text("Every second").tag(1000)
                     Text("Every 2 seconds").tag(2000)

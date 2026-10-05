@@ -24,6 +24,8 @@ struct AppSettings: Codable, Equatable, Sendable {
     var badgeStyle = BadgeStyle.pill
     var monochrome = false
     var showMenuIcon = true
+    /// Bring a menu bar that hides automatically into view while there are notifications.
+    var revealMenuBar = false
     var pollIntervalMs = 1000
 }
 

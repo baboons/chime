@@ -53,6 +53,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
                 show(app, badge: badge, style: config.settings.badgeStyle, in: button)
             }
         }
+
+        SystemMenuBar.setRevealed(config.settings.revealMenuBar && model.hasNotifications)
     }
 
     // MARK: App items

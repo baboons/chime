@@ -54,6 +54,9 @@ After that:
 - The bell menu lists every tracked app and leads back to settings. If you hide
   the bell, open Chime again to get the window back.
 - ⌘-drag menu bar items to reorder them; Chime remembers where you put them.
+- If your menu bar hides automatically, turn on **Reveal the menu bar when
+  notified**. Chime then keeps the menu bar in view while an app has
+  notifications, and lets it hide again once they are gone.
 
 <p align="center">
   <img src="docs/settings.png" width="520" alt="Chime's settings window listing tracked apps and their notification counts">
@@ -147,6 +150,11 @@ The core is a static library with a small C interface; structured data crosses
 it as JSON. The configuration lives in
 `~/Library/Application Support/Chime/config.json` and is owned by the core.
 Swift sends a whole new config whenever a setting changes.
+
+Revealing the menu bar switches off the system's "Automatically hide and show
+the menu bar" setting (`_HIHideMenuBar` in the global defaults) and switches it
+back on when the notifications are gone or Chime quits. A menu bar that is
+always in view is never touched.
 
 ### Development notes
 
