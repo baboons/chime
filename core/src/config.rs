@@ -51,6 +51,10 @@ pub struct Settings {
     pub reveal_menu_bar: bool,
     /// Show the apps that have notifications in a floating panel.
     pub show_indicator: bool,
+    /// What the floating panel's background is made of.
+    pub indicator_effect: IndicatorEffect,
+    /// How opaque that background is, from 0 (clear) to 1.
+    pub indicator_opacity: f64,
     /// Play a sound when a notification arrives.
     pub play_sound: bool,
     pub poll_interval_ms: u64,
@@ -64,6 +68,8 @@ impl Default for Settings {
             show_menu_icon: true,
             reveal_menu_bar: false,
             show_indicator: false,
+            indicator_effect: IndicatorEffect::Blur,
+            indicator_opacity: 1.0,
             play_sound: false,
             poll_interval_ms: 1_000,
         }
@@ -80,6 +86,16 @@ pub enum BadgeStyle {
     Number,
     /// A red dot with no count.
     Dot,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum IndicatorEffect {
+    /// The system's blurred HUD material.
+    #[default]
+    Blur,
+    /// Liquid Glass. Needs macOS 26; the app shows the blur on older systems.
+    Glass,
 }
 
 impl Config {
@@ -130,6 +146,7 @@ impl Config {
             .settings
             .poll_interval_ms
             .clamp(MIN_POLL_INTERVAL_MS, MAX_POLL_INTERVAL_MS);
+        self.settings.indicator_opacity = self.settings.indicator_opacity.clamp(0.0, 1.0);
     }
 }
 
@@ -163,21 +180,25 @@ mod tests {
         assert!(config.settings.show_menu_icon);
         assert!(!config.settings.reveal_menu_bar);
         assert!(!config.settings.show_indicator);
+        assert_eq!(config.settings.indicator_effect, IndicatorEffect::Blur);
+        assert_eq!(config.settings.indicator_opacity, 1.0);
         assert!(!config.settings.play_sound);
         assert_eq!(config.settings.poll_interval_ms, 1_000);
     }
 
     #[test]
-    fn normalize_drops_duplicates_and_clamps_interval() {
+    fn normalize_drops_duplicates_and_clamps_settings() {
         let mut config = Config {
             apps: vec![app("com.a"), app("COM.A"), app(""), app("com.b")],
             ..Config::default()
         };
         config.settings.poll_interval_ms = 1;
+        config.settings.indicator_opacity = 1.5;
         let config = Config::from_json(&config.to_json()).unwrap();
         let ids: Vec<_> = config.apps.iter().map(|a| a.bundle_id.as_str()).collect();
         assert_eq!(ids, ["com.a", "com.b"]);
         assert_eq!(config.settings.poll_interval_ms, MIN_POLL_INTERVAL_MS);
+        assert_eq!(config.settings.indicator_opacity, 1.0);
     }
 
     #[test]

@@ -28,6 +28,10 @@ struct AppSettings: Codable, Equatable, Sendable {
     var revealMenuBar = false
     /// Show the apps that have notifications in a floating panel.
     var showIndicator = false
+    /// What the floating panel's background is made of.
+    var indicatorEffect = IndicatorEffect.blur
+    /// How opaque that background is, from 0 (clear) to 1.
+    var indicatorOpacity = 1.0
     /// Play a sound when a notification arrives.
     var playSound = false
     var pollIntervalMs = 1000
@@ -49,6 +53,31 @@ enum BadgeStyle: String, Codable, CaseIterable, Identifiable, Sendable {
         case .number: "Number"
         case .dot: "Dot"
         }
+    }
+}
+
+enum IndicatorEffect: String, Codable, CaseIterable, Identifiable, Sendable {
+    /// The system's blurred HUD material.
+    case blur
+    /// Liquid Glass. Needs macOS 26; older systems show the blur.
+    case glass
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .blur: "Blur"
+        case .glass: "Liquid Glass"
+        }
+    }
+
+    /// Whether this version of macOS can draw the effect.
+    var isAvailable: Bool {
+        guard self == .glass else { return true }
+        if #available(macOS 26, *) {
+            return true
+        }
+        return false
     }
 }
 

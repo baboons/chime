@@ -5,7 +5,7 @@ import SwiftUI
 /// without reading the Dock or needing any permissions. `make screenshots`
 /// uses it for the README images.
 ///
-///     Chime --demo-snapshot <menu-bar|styles|settings> out.png [--light]
+///     Chime --demo-snapshot <menu-bar|styles|indicator|settings> out.png [--light]
 @MainActor
 enum DemoSnapshot {
     private enum Scene: String, CaseIterable {
@@ -13,6 +13,8 @@ enum DemoSnapshot {
         case menuBar = "menu-bar"
         /// The same apps in each badge style.
         case styles
+        /// The floating indicator.
+        case indicator
         /// The settings window.
         case settings
     }
@@ -62,6 +64,7 @@ enum DemoSnapshot {
         let image = switch scene {
         case .menuBar: menuBar()
         case .styles: styles()
+        case .indicator: indicator()
         case .settings: settings()
         }
         guard let png = image.representation(using: .png, properties: [:]), (try? png.write(to: output)) != nil else {
@@ -172,6 +175,34 @@ enum DemoSnapshot {
                 case .text(let text): text.draw(at: NSPoint(x: x, y: y))
                 }
                 x += piece.size.width
+            }
+        }
+    }
+
+    // MARK: Indicator scene
+
+    /// The floating indicator with the sample apps that have notifications,
+    /// laid out the way `IndicatorController` lays out its panel.
+    private static func indicator() -> NSBitmapImageRep {
+        let images = samples.filter { $0.badge != nil }.map { sample in
+            let icon = NSWorkspace.shared.icon(forFile: sample.app.path)
+            return StatusItemArt.content(icon: icon, badge: sample.status.badge, style: .pill).image
+        }
+        let height = IndicatorController.height
+        let spacing = IndicatorController.spacing
+        let content = images.map(\.size.width).reduce(0, +) + spacing * CGFloat(images.count - 1)
+        let size = NSSize(width: ceil(content + IndicatorController.inset * 2), height: height)
+
+        return draw(size) {
+            // Stands in for the panel's HUD material, which only the window server can draw.
+            (isDark ? NSColor(white: 0.16, alpha: 0.8) : NSColor(white: 0.94, alpha: 0.8)).setFill()
+            NSBezierPath(roundedRect: NSRect(origin: .zero, size: size), xRadius: height / 2, yRadius: height / 2).fill()
+
+            var x = (size.width - content) / 2
+            for image in images {
+                let y = (height - image.size.height) / 2
+                image.draw(at: NSPoint(x: x, y: y), from: .zero, operation: .sourceOver, fraction: 1)
+                x += image.size.width + spacing
             }
         }
     }

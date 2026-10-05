@@ -50,6 +50,18 @@ struct SettingsView: View {
                     Text("Show a floating indicator")
                     Text("The notified apps in a small panel you can drag anywhere.")
                 }
+                if model.config.settings.showIndicator {
+                    if IndicatorEffect.glass.isAvailable {
+                        Picker("Indicator background", selection: $model.config.settings.indicatorEffect) {
+                            ForEach(IndicatorEffect.allCases) { effect in
+                                Text(effect.title).tag(effect)
+                            }
+                        }
+                    }
+                    Slider(value: indicatorOpacity, in: 0...1) {
+                        Text("Background opacity")
+                    }
+                }
                 Toggle("Play a sound", isOn: $model.config.settings.playSound)
                     .onChange(of: model.config.settings.playSound) { _, isOn in
                         // Lets the user hear what they turned on.
@@ -85,6 +97,15 @@ struct SettingsView: View {
         }
         .dropDestination(for: URL.self) { urls, _ in
             model.add(urls)
+        }
+    }
+
+    /// The indicator's opacity in whole percent, so dragging the slider saves a hundred values at most.
+    private var indicatorOpacity: Binding<Double> {
+        Binding {
+            model.config.settings.indicatorOpacity
+        } set: {
+            model.config.settings.indicatorOpacity = ($0 * 100).rounded() / 100
         }
     }
 }

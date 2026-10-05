@@ -5,13 +5,19 @@ import Observation
 /// menu bar is out of sight. It can be dragged anywhere and stays where it is put.
 @MainActor
 final class IndicatorController: NSObject {
-    private static let height: CGFloat = 34
+    static let height: CGFloat = 34
+    /// The gap between two apps.
+    static let spacing: CGFloat = 10
+    /// The gap between the apps and the panel's ends.
+    static let inset: CGFloat = 12
     private static let frameName = "Indicator"
 
     private let model: AppModel
     private let appButtons: AppButtons
 
     private var panel: NSPanel?
+    /// What is behind the apps, and the effect it was made for.
+    private var background: (view: NSView, effect: IndicatorEffect)?
     private let stack = NSStackView()
     private var buttons: [String: IndicatorButton] = [:]
 
@@ -57,6 +63,7 @@ final class IndicatorController: NSObject {
         let isNew = panel == nil
         let panel = panel ?? makePanel()
         self.panel = panel
+        showBackground(config.settings, in: panel)
         fit(panel, restoringFrame: isNew)
         panel.orderFrontRegardless()
     }
@@ -72,26 +79,57 @@ final class IndicatorController: NSObject {
         panel.isOpaque = false
         panel.backgroundColor = .clear
         panel.isMovableByWindowBackground = true
+        // Said outright: left alone, a clear window only takes clicks where the system
+        // sees something drawn, and it sees nothing once the background has faded away.
+        panel.ignoresMouseEvents = false
         panel.setAccessibilityLabel("Chime notifications")
 
-        let background = NSVisualEffectView()
-        background.material = .hudWindow
-        background.state = .active
-        background.maskImage = Self.capsule(height: Self.height)
-        panel.contentView = background
+        // The apps go over the background rather than in it, so they stay solid when it fades.
+        let content = NSView()
+        panel.contentView = content
 
         stack.orientation = .horizontal
-        stack.spacing = 10
-        stack.edgeInsets = NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
+        stack.spacing = Self.spacing
+        stack.edgeInsets = NSEdgeInsets(top: 0, left: Self.inset, bottom: 0, right: Self.inset)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        background.addSubview(stack)
+        content.addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: background.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: background.trailingAnchor),
-            stack.topAnchor.constraint(equalTo: background.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: background.bottomAnchor),
+            stack.leadingAnchor.constraint(equalTo: content.leadingAnchor),
+            stack.trailingAnchor.constraint(equalTo: content.trailingAnchor),
+            stack.topAnchor.constraint(equalTo: content.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: content.bottomAnchor),
         ])
         return panel
+    }
+
+    /// Puts the background the settings ask for behind the apps.
+    private func showBackground(_ settings: AppSettings, in panel: NSPanel) {
+        guard let content = panel.contentView else { return }
+        let effect = settings.indicatorEffect.isAvailable ? settings.indicatorEffect : .blur
+        if background?.effect != effect {
+            background?.view.removeFromSuperview()
+            let view = Self.makeBackground(effect)
+            view.frame = content.bounds
+            view.autoresizingMask = [.width, .height]
+            content.addSubview(view, positioned: .below, relativeTo: stack)
+            background = (view, effect)
+        }
+        background?.view.alphaValue = settings.indicatorOpacity
+        // The window's shadow and rim cannot fade with the background, and glass has an edge of its own.
+        panel.hasShadow = effect == .blur && settings.indicatorOpacity == 1
+    }
+
+    private static func makeBackground(_ effect: IndicatorEffect) -> NSView {
+        if effect == .glass, #available(macOS 26, *) {
+            let glass = NSGlassEffectView()
+            glass.cornerRadius = height / 2
+            return glass
+        }
+        let blur = NSVisualEffectView()
+        blur.material = .hudWindow
+        blur.state = .active
+        blur.maskImage = capsule(height: height)
+        return blur
     }
 
     /// A capsule that stretches to any width, for masking the panel's background.
@@ -186,7 +224,9 @@ final class IndicatorController: NSObject {
 /// whole indicator, and a right-click opens the menu.
 private final class IndicatorButton: NSButton {
     /// How far the pointer may wander during a click before it becomes a drag.
-    private static let dragThreshold: CGFloat = 3
+    /// Generous, because opening the app is what a press is usually for and a
+    /// sensitive mouse slips several points between press and release.
+    private static let dragThreshold: CGFloat = 8
 
     var makeMenu: (() -> NSMenu?)?
 

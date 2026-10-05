@@ -67,7 +67,7 @@ icon:
 screenshots: core
 	swift build -c release
 	@mkdir -p docs build/shots
-	@for shot in menu-bar styles settings; do \
+	@for shot in menu-bar styles indicator settings; do \
 		$(SWIFT_BIN) --demo-snapshot $$shot build/shots/$$shot.png && \
 		swift scripts/compose-screenshot.swift build/shots/$$shot.png docs/$$shot.png || exit 1; \
 	done

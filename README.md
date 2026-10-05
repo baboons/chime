@@ -62,7 +62,11 @@ Chime can tell you in other ways. Under **When notified**, turn on any of:
   notifications, and lets it hide again once they are gone.
 - **Show a floating indicator** puts the apps that have notifications in a
   small panel that floats over your windows. Click an app to open it, right-click
-  it for options, and drag the panel to wherever you want it.
+  it for options, and drag the panel to wherever you want it. Its background can
+  be a blur or, on macOS 26 and later, Liquid Glass, and as see-through as you like.
+
+  <img src="docs/indicator.png" width="320" alt="The floating indicator showing Mail, Messages and Calendar with their notification counts">
+
 - **Play a sound** chimes when a notification arrives.
 
 <p align="center">
@@ -170,7 +174,7 @@ always in view is never touched.
 - `CHIME_CONFIG=/path/to/config.json` makes Chime use a different config file.
 - Running `build/Chime.app/Contents/MacOS/Chime` from a terminal inherits the
   terminal's Accessibility access, which is handy while developing.
-- `Chime --demo-snapshot <menu-bar|styles|settings> out.png [--light]` renders
+- `Chime --demo-snapshot <menu-bar|styles|indicator|settings> out.png [--light]` renders
   the real UI with sample apps into a PNG. It needs no permissions.
 - Views use `@ViewState` instead of `@State`; see
   `Sources/Chime/Views/ViewState.swift` for why.
