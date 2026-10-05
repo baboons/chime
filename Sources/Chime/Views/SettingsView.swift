@@ -41,6 +41,24 @@ struct SettingsView: View {
                 }
             }
 
+            Section("When notified") {
+                Toggle(isOn: $model.config.settings.revealMenuBar) {
+                    Text("Reveal the menu bar")
+                    Text("For when the menu bar is set to hide automatically.")
+                }
+                Toggle(isOn: $model.config.settings.showIndicator) {
+                    Text("Show a floating indicator")
+                    Text("The notified apps in a small panel you can drag anywhere.")
+                }
+                Toggle("Play a sound", isOn: $model.config.settings.playSound)
+                    .onChange(of: model.config.settings.playSound) { _, isOn in
+                        // Lets the user hear what they turned on.
+                        if isOn {
+                            model.playSound()
+                        }
+                    }
+            }
+
             Section("General") {
                 Toggle(isOn: Binding { model.launchAtLogin } set: { model.setLaunchAtLogin($0) }) {
                     Text("Launch at login")
@@ -51,10 +69,6 @@ struct SettingsView: View {
                 Toggle(isOn: $model.config.settings.showMenuIcon) {
                     Text("Show Chime in the menu bar")
                     Text("When hidden, open Chime again to get back here.")
-                }
-                Toggle(isOn: $model.config.settings.revealMenuBar) {
-                    Text("Reveal the menu bar when notified")
-                    Text("For when the menu bar is set to hide automatically.")
                 }
                 Picker("Check for notifications", selection: $model.config.settings.pollIntervalMs) {
                     Text("Every second").tag(1000)

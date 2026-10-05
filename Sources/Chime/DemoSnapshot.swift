@@ -185,7 +185,7 @@ enum DemoSnapshot {
             state: CoreState(trusted: true, apps: samples.map(\.status))
         )
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 729),
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 874),
             styleMask: [.titled, .closable, .miniaturizable, .resizable],
             backing: .buffered,
             defer: false

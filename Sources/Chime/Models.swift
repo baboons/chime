@@ -26,6 +26,10 @@ struct AppSettings: Codable, Equatable, Sendable {
     var showMenuIcon = true
     /// Bring a menu bar that hides automatically into view while there are notifications.
     var revealMenuBar = false
+    /// Show the apps that have notifications in a floating panel.
+    var showIndicator = false
+    /// Play a sound when a notification arrives.
+    var playSound = false
     var pollIntervalMs = 1000
 }
 
@@ -52,6 +56,21 @@ struct CoreState: Codable, Equatable, Sendable {
     /// Whether Accessibility access has been granted.
     var trusted = false
     var apps: [AppStatus] = []
+
+    /// Whether a notification arrived since `previous`: an app got a badge, or
+    /// its count went up. A badge that was already there when Chime started
+    /// watching the app is not an arrival.
+    func hasArrivals(since previous: CoreState) -> Bool {
+        guard trusted, previous.trusted else { return false }
+        return apps.contains { app in
+            guard let badge = app.badge,
+                  let before = previous.apps.first(where: { $0.bundleId == app.bundleId })
+            else { return false }
+            guard let oldBadge = before.badge else { return true }
+            guard let count = badge.count, let oldCount = oldBadge.count else { return false }
+            return count > oldCount
+        }
+    }
 }
 
 struct AppStatus: Codable, Equatable, Sendable {

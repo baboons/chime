@@ -49,6 +49,10 @@ pub struct Settings {
     pub show_menu_icon: bool,
     /// Bring a menu bar that hides automatically into view while there are notifications.
     pub reveal_menu_bar: bool,
+    /// Show the apps that have notifications in a floating panel.
+    pub show_indicator: bool,
+    /// Play a sound when a notification arrives.
+    pub play_sound: bool,
     pub poll_interval_ms: u64,
 }
 
@@ -59,6 +63,8 @@ impl Default for Settings {
             monochrome: false,
             show_menu_icon: true,
             reveal_menu_bar: false,
+            show_indicator: false,
+            play_sound: false,
             poll_interval_ms: 1_000,
         }
     }
@@ -156,6 +162,8 @@ mod tests {
         assert_eq!(config.settings.badge_style, BadgeStyle::Dot);
         assert!(config.settings.show_menu_icon);
         assert!(!config.settings.reveal_menu_bar);
+        assert!(!config.settings.show_indicator);
+        assert!(!config.settings.play_sound);
         assert_eq!(config.settings.poll_interval_ms, 1_000);
     }
 

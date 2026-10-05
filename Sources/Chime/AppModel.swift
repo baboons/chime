@@ -23,6 +23,7 @@ final class AppModel {
     var isPickingApps = false
 
     @ObservationIgnored private var isStarted = false
+    @ObservationIgnored private let sound = NSSound(named: "Glass")
 
     init() {}
 
@@ -43,10 +44,23 @@ final class AppModel {
     func start() {
         state.trusted = Core.isTrusted()
         Core.start(configURL: Self.configURL) { [weak self] state in
-            self?.state = state
+            self?.receive(state)
         }
         config = Core.config
         isStarted = true
+    }
+
+    private func receive(_ newState: CoreState) {
+        let hasArrivals = newState.hasArrivals(since: state)
+        state = newState
+        if hasArrivals, config.settings.playSound {
+            playSound()
+        }
+    }
+
+    /// Plays the sound that announces a notification.
+    func playSound() {
+        sound?.play()
     }
 
     // MARK: Apps

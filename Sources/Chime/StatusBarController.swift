@@ -5,17 +5,15 @@ import Observation
 @MainActor
 final class StatusBarController: NSObject, NSMenuDelegate {
     private let model: AppModel
+    private let appButtons: AppButtons
     private let showSettings: (_ pickingApps: Bool) -> Void
 
     private var bellItem: NSStatusItem?
     private var appItems: [String: NSStatusItem] = [:]
 
-    /// App icons by bundle id, as drawn for `iconsConfig`.
-    private var icons: [String: NSImage] = [:]
-    private var iconsConfig: Config?
-
-    init(model: AppModel, showSettings: @escaping (_ pickingApps: Bool) -> Void) {
+    init(model: AppModel, appButtons: AppButtons, showSettings: @escaping (_ pickingApps: Bool) -> Void) {
         self.model = model
+        self.appButtons = appButtons
         self.showSettings = showSettings
     }
 
@@ -33,11 +31,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
 
     private func render() {
         let config = model.config
-        if iconsConfig != config {
-            icons.removeAll()
-            iconsConfig = config
-        }
-
         renderBell(visible: config.settings.showMenuIcon)
 
         for (bundleId, item) in appItems where !model.isTracked(bundleId) {
@@ -50,7 +43,7 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             appItems[app.bundleId] = item
             item.isVisible = app.alwaysShow || badge != nil
             if item.isVisible, let button = item.button {
-                show(app, badge: badge, style: config.settings.badgeStyle, in: button)
+                appButtons.show(app, badge: badge, in: button)
             }
         }
 
@@ -73,28 +66,6 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         return item
     }
 
-    private func show(_ app: TrackedApp, badge: Badge?, style: BadgeStyle, in button: NSStatusBarButton) {
-        let content = StatusItemArt.content(icon: icon(for: app), badge: badge, style: style)
-        let summary = badge?.summary ?? "No notifications"
-        button.image = content.image
-        button.title = content.title
-        button.imagePosition = content.title.isEmpty ? .imageOnly : .imageLeading
-        button.toolTip = "\(app.name) – \(summary)"
-        button.setAccessibilityLabel("\(app.name), \(summary)")
-    }
-
-    private func icon(for app: TrackedApp) -> NSImage {
-        if let icon = icons[app.bundleId] {
-            return icon
-        }
-        var icon = NSWorkspace.shared.icon(forFile: model.location(of: app).path)
-        if model.config.settings.monochrome {
-            icon = StatusItemArt.monochrome(icon)
-        }
-        icons[app.bundleId] = icon
-        return icon
-    }
-
     @objc private func appItemClicked(_ button: NSStatusBarButton) {
         guard let bundleId = button.identifier?.rawValue,
               let app = model.config.apps.first(where: { $0.bundleId == bundleId }),
@@ -108,25 +79,9 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             return
         }
         // A status item with a menu always opens it, so attach it for this click only.
-        item.menu = menu(for: app)
+        item.menu = appButtons.menu(for: app)
         button.performClick(nil)
         item.menu = nil
-    }
-
-    private func menu(for app: TrackedApp) -> NSMenu {
-        let menu = NSMenu()
-        menu.addItem(ActionMenuItem("Open \(app.name)") { [model] in model.open(app) })
-        menu.addItem(.separator())
-        let alwaysShow = ActionMenuItem("Always Show in Menu Bar") { [model] in
-            model.setAlwaysShow(!app.alwaysShow, for: app.bundleId)
-        }
-        alwaysShow.state = app.alwaysShow ? .on : .off
-        menu.addItem(alwaysShow)
-        menu.addItem(ActionMenuItem("Remove from Chime") { [model] in model.remove(app.bundleId) })
-        menu.addItem(.separator())
-        menu.addItem(ActionMenuItem("Chime Settings…") { [showSettings] in showSettings(false) })
-        menu.addItem(ActionMenuItem("Quit Chime") { NSApp.terminate(nil) })
-        return menu
     }
 
     // MARK: Bell menu
@@ -175,25 +130,5 @@ final class StatusBarController: NSObject, NSMenuDelegate {
         menu.addItem(ActionMenuItem("Settings…", keyEquivalent: ",") { [showSettings] in showSettings(false) })
         menu.addItem(.separator())
         menu.addItem(ActionMenuItem("Quit Chime", keyEquivalent: "q") { NSApp.terminate(nil) })
-    }
-}
-
-/// A menu item that runs a closure.
-private final class ActionMenuItem: NSMenuItem {
-    private let handler: () -> Void
-
-    init(_ title: String, keyEquivalent: String = "", handler: @escaping () -> Void) {
-        self.handler = handler
-        super.init(title: title, action: #selector(run), keyEquivalent: keyEquivalent)
-        target = self
-    }
-
-    @available(*, unavailable)
-    required init(coder: NSCoder) {
-        fatalError("init(coder:) is not supported")
-    }
-
-    @objc private func run() {
-        handler()
     }
 }

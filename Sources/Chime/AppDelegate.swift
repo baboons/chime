@@ -4,14 +4,19 @@ import AppKit
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = AppModel()
     private lazy var settings = SettingsWindowController(model: model)
-    private lazy var statusBar = StatusBarController(model: model) { [unowned self] pickingApps in
-        settings.show(pickingApps: pickingApps)
+    private lazy var appButtons = AppButtons(model: model, showSettings: showSettings)
+    private lazy var statusBar = StatusBarController(model: model, appButtons: appButtons, showSettings: showSettings)
+    private lazy var indicator = IndicatorController(model: model, appButtons: appButtons)
+
+    private var showSettings: (_ pickingApps: Bool) -> Void {
+        { [unowned self] pickingApps in settings.show(pickingApps: pickingApps) }
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = makeMainMenu()
         model.start()
         statusBar.start()
+        indicator.start()
 
         // Nothing to show in the menu bar yet, so start with setup.
         if model.config.apps.isEmpty || !model.state.trusted {

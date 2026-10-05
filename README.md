@@ -54,9 +54,16 @@ After that:
 - The bell menu lists every tracked app and leads back to settings. If you hide
   the bell, open Chime again to get the window back.
 - ⌘-drag menu bar items to reorder them; Chime remembers where you put them.
-- If your menu bar hides automatically, turn on **Reveal the menu bar when
-  notified**. Chime then keeps the menu bar in view while an app has
+
+With a menu bar that hides automatically you would not see any of that, so
+Chime can tell you in other ways. Under **When notified**, turn on any of:
+
+- **Reveal the menu bar** keeps the menu bar in view while an app has
   notifications, and lets it hide again once they are gone.
+- **Show a floating indicator** puts the apps that have notifications in a
+  small panel that floats over your windows. Click an app to open it, right-click
+  it for options, and drag the panel to wherever you want it.
+- **Play a sound** chimes when a notification arrives.
 
 <p align="center">
   <img src="docs/settings.png" width="520" alt="Chime's settings window listing tracked apps and their notification counts">
@@ -135,7 +142,7 @@ core/                  Rust: everything that is not UI
   src/config.rs        the saved configuration
   src/monitor.rs       background thread that polls the Dock and reports changes
   src/ffi.rs           the C ABI, declared in include/chime_core.h
-Sources/Chime/         Swift: menu bar items, settings window, app picker
+Sources/Chime/         Swift: menu bar items, floating indicator, settings window, app picker
 Resources/             Info.plist and the app icon
 scripts/               the icon and screenshot drawing, and release.sh
 ```
