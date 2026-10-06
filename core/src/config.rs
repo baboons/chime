@@ -46,6 +46,8 @@ pub struct TrackedApp {
 pub struct Settings {
     pub badge_style: BadgeStyle,
     pub monochrome: bool,
+    /// Let an app that has its own menu bar item be shown as that item.
+    pub use_own_items: bool,
     pub show_menu_icon: bool,
     /// Bring a menu bar that hides automatically into view while there are notifications.
     pub reveal_menu_bar: bool,
@@ -65,6 +67,7 @@ impl Default for Settings {
         Settings {
             badge_style: BadgeStyle::Pill,
             monochrome: false,
+            use_own_items: false,
             show_menu_icon: true,
             reveal_menu_bar: false,
             show_indicator: false,
@@ -177,6 +180,7 @@ mod tests {
         .unwrap();
         assert!(!config.apps[0].always_show);
         assert_eq!(config.settings.badge_style, BadgeStyle::Dot);
+        assert!(!config.settings.use_own_items);
         assert!(config.settings.show_menu_icon);
         assert!(!config.settings.reveal_menu_bar);
         assert!(!config.settings.show_indicator);

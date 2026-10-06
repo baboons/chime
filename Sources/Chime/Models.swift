@@ -23,6 +23,8 @@ struct TrackedApp: Codable, Equatable, Identifiable, Sendable {
 struct AppSettings: Codable, Equatable, Sendable {
     var badgeStyle = BadgeStyle.pill
     var monochrome = false
+    /// Let an app that has its own menu bar item be shown as that item.
+    var useOwnItems = false
     var showMenuIcon = true
     /// Bring a menu bar that hides automatically into view while there are notifications.
     var revealMenuBar = false

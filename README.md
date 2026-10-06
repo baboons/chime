@@ -54,6 +54,10 @@ After that:
 - The bell menu lists every tracked app and leads back to settings. If you hide
   the bell, open Chime again to get the window back.
 - ⌘-drag menu bar items to reorder them; Chime remembers where you put them.
+- Some apps are in the menu bar already, with an item of their own. Turn on
+  **Use apps' own menu bar items** and Chime does not add those apps a second
+  time, and the floating indicator shows the title of their item, such as a
+  mail app's next meeting, next to their icon.
 
 With a menu bar that hides automatically you would not see any of that, so
 Chime can tell you in other ways. Under **When notified**, turn on any of:
@@ -85,8 +89,16 @@ Chime mirrors the badge on each app's Dock icon, so:
 - The app has to be in the Dock, which means running or pinned. A hidden Dock is fine.
 - The app has to be allowed to badge its icon: System Settings → Notifications →
   the app → **Badge application icon**. A Focus that hides badges hides them from Chime too.
-- Reading another app's Dock icon needs Accessibility access. Chime reads the
-  Dock and nothing else, and makes no network connections.
+- Reading another app's Dock icon needs Accessibility access. Unless you turn
+  on the option below, Chime reads the Dock and nothing else. It makes no
+  network connections.
+- With **Use apps' own menu bar items** on, Chime also reads whether the
+  tracked apps have a menu bar item and what it is titled. An item that draws
+  its text into its image has no title, and stays an icon in the indicator.
+
+If you make an app, [docs/api.md](docs/api.md) says what Chime reads from an
+app, and how an app can send Chime a title to show next to its icon in the
+floating indicator.
 
 ## Building
 

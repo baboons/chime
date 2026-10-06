@@ -16,10 +16,12 @@ final class AppButtons {
         self.showSettings = showSettings
     }
 
-    /// Draws the app and its badge into `button`.
-    func show(_ app: TrackedApp, badge: Badge?, in button: NSButton) {
-        let content = StatusItemArt.content(icon: icon(for: app), badge: badge, style: model.config.settings.badgeStyle)
-        let summary = badge?.summary ?? "No notifications"
+    /// Draws the app and its badge into `button`, followed by `label` if there is one.
+    func show(_ app: TrackedApp, badge: Badge?, label: ItemLabel? = nil, in button: NSButton) {
+        let content = StatusItemArt.content(
+            icon: icon(for: app), badge: badge, style: model.config.settings.badgeStyle, label: label)
+        // An app shown for what it sent, without a badge, is about that.
+        let summary = badge?.summary ?? model.sentLabels[app.bundleId]?.title ?? "No notifications"
         button.image = content.image
         button.title = content.title
         button.imagePosition = content.title.isEmpty ? .imageOnly : .imageLeading

@@ -41,7 +41,8 @@ final class StatusBarController: NSObject, NSMenuDelegate {
             let badge = model.status(of: app)?.badge
             let item = appItems[app.bundleId] ?? makeItem(for: app)
             appItems[app.bundleId] = item
-            item.isVisible = app.alwaysShow || badge != nil
+            // An app that is in the menu bar by itself is not put there a second time.
+            item.isVisible = (app.alwaysShow || model.isNotified(app)) && !model.hasOwnItem(app)
             if item.isVisible, let button = item.button {
                 appButtons.show(app, badge: badge, in: button)
             }

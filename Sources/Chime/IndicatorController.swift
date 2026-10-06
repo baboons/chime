@@ -41,7 +41,7 @@ final class IndicatorController: NSObject {
     private func render() {
         let config = model.config
         let notified = config.settings.showIndicator
-            ? config.apps.filter { model.status(of: $0)?.badge != nil }
+            ? config.apps.filter { model.isNotified($0) }
             : []
 
         for bundleId in buttons.keys where !notified.contains(where: { $0.bundleId == bundleId }) {
@@ -55,7 +55,7 @@ final class IndicatorController: NSObject {
         let views = notified.map { app in
             let button = buttons[app.bundleId] ?? makeButton(for: app)
             buttons[app.bundleId] = button
-            appButtons.show(app, badge: model.status(of: app)?.badge, in: button)
+            appButtons.show(app, badge: model.status(of: app)?.badge, label: model.label(of: app), in: button)
             return button
         }
         stack.setViews(views, in: .center)

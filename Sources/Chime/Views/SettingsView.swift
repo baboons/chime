@@ -39,6 +39,10 @@ struct SettingsView: View {
                 LabeledContent("Preview") {
                     MenuBarPreview()
                 }
+                Toggle(isOn: $model.config.settings.useOwnItems) {
+                    Text("Use apps' own menu bar items")
+                    Text("An app that is in the menu bar already is not added again, and the floating indicator shows its item's title.")
+                }
             }
 
             Section("When notified") {
@@ -126,7 +130,7 @@ private struct AccessibilityPrompt: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Allow Accessibility access")
                     .font(.headline)
-                Text("Chime reads notification badges from the Dock, which macOS only allows with Accessibility access. It reads nothing else, and nothing leaves your Mac.")
+                Text("Chime reads notification badges from the Dock, which macOS only allows with Accessibility access. Nothing it reads leaves your Mac.")
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Button("Open Accessibility Settings…") {
